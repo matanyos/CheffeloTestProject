@@ -10,10 +10,12 @@ namespace Work.Controllers
     public class UserController : ControllerBase
     {
         private readonly IRepository<User, Guid> userRepository;
+        private readonly ILogger<UserController> logger;
 
-        public UserController(IRepository<User, Guid> userRepository)
+        public UserController(IRepository<User, Guid> userRepository, ILogger<UserController> logger)
         {
             this.userRepository = userRepository;
+            this.logger = logger;
         }
 
         [HttpGet("{id}")]
@@ -25,14 +27,18 @@ namespace Work.Controllers
             try
             {
                 var user = userRepository.Read(id);
+
+                logger.LogInformation($"Returned user with ID {id}");
                 return Ok(user);
             }
-            catch (KeyNotFoundException)
+            catch (KeyNotFoundException ex)
             {
+                logger.LogWarning(ex, $"User with ID {id} is not found");
                 return NotFound($"User with ID {id} is not found");
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, $"Internal server error: {ex.Message}");
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
@@ -53,6 +59,7 @@ namespace Work.Controllers
 
                 userRepository.Create(user);
 
+                logger.LogInformation($"Created user with ID {user.UserId}");
                 return CreatedAtAction(nameof(Get), new { id = user.UserId }, user);
             }
             catch (Exception ex)
@@ -78,14 +85,17 @@ namespace Work.Controllers
 
                 userRepository.Update(user);
 
+                logger.LogInformation($"Updated user entity");
                 return Ok(user);
             }
-            catch (KeyNotFoundException)
+            catch (KeyNotFoundException ex)
             {
+                logger.LogWarning(ex, $"User with ID {userModelDto.Id} is not found");
                 return NotFound($"User with ID {userModelDto.Id} is not found");
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, $"Internal server error: {ex.Message}");
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
@@ -102,14 +112,17 @@ namespace Work.Controllers
 
                 userRepository.Remove(user);
 
+                logger.LogInformation($"Deleted user with ID {id}");
                 return NoContent();
             }
-            catch (KeyNotFoundException)
+            catch (KeyNotFoundException ex)
             {
+                logger.LogWarning(ex, $"User with ID {id} is not found");
                 return NotFound($"User with ID {id} is not found");
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, $"Internal server error: {ex.Message}");
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
